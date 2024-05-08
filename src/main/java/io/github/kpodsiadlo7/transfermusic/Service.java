@@ -15,7 +15,6 @@ public class Service {
     private String CLIENT_ID;
     @Value("${client.secret}")
     private String CLIENT_SECRET;
-    private static final int LIMIT_TRACKS = 100;
     private static int OFFSET;
     private static String TOKEN;
     private final SpotifyAuth spotifyAuth;
@@ -47,15 +46,19 @@ public class Service {
     }
 
     private Set<AuthorSong> processResponse(String playlistId) {
-        Tracks tracks;
         Set<AuthorSong> listSongs = new HashSet<>();
-        setFirstPage();
 
+        createSetListFormPlaylist(playlistId, listSongs);
+        return listSongs.isEmpty() ? Set.of(new AuthorSong("Brak", "Brak")) : listSongs;
+    }
+
+    private void createSetListFormPlaylist(String playlistId, Set<AuthorSong> listSongs) {
+        Tracks tracks;
+        setFirstPage();
         do {
             tracks = getPlaylist(playlistId);
             createSetListWithAuthorSong(tracks, listSongs);
-        } while (tracks.next() != null);
-        return listSongs.isEmpty() ? Set.of(new AuthorSong("Brak", "Brak")) : listSongs;
+        } while (hasNextPage(tracks));
     }
 
     private static void setFirstPage() {
@@ -63,17 +66,22 @@ public class Service {
     }
 
     private Tracks getPlaylist(String playlistId) {
+        int LIMIT_TRACKS = 100;
         return spotifyClient.getPlaylist(playlistId, "Bearer " + TOKEN, OFFSET, LIMIT_TRACKS);
     }
 
 
     private void createSetListWithAuthorSong(Tracks tracks, Set<AuthorSong> listSongs) {
-        incrementOffsetForNextPage();
         for (var track : tracks.items()) {
             TrackItem trackItem = track.track();
             Album album = trackItem.album();
             createCurrentAuthorSongAndPutIntoSetList(album, listSongs);
         }
+        incrementOffsetForNextPage();
+    }
+
+    private static boolean hasNextPage(Tracks tracks) {
+        return tracks.next() != null;
     }
 
     private static void incrementOffsetForNextPage() {
