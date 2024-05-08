@@ -10,7 +10,11 @@ import java.util.*;
 
 @Component
 public class Service {
-    //1Rfu5DkfW6AUiJYnfMpw7m
+    /** Example playlist Id
+    1Rfu5DkfW6AUiJYnfMpw7m
+    0QpzKNel9MzjH7YqGKwqOG
+    */
+
     @Value("${client.id}")
     private String CLIENT_ID;
     @Value("${client.secret}")
@@ -48,17 +52,17 @@ public class Service {
     private Set<AuthorSong> processResponse(String playlistId) {
         Set<AuthorSong> listSongs = new HashSet<>();
 
-        createSetListFormPlaylist(playlistId, listSongs);
+        getPlayListAndFillSetList(playlistId, listSongs);
         return listSongs.isEmpty() ? Set.of(new AuthorSong("Brak", "Brak")) : listSongs;
     }
 
-    private void createSetListFormPlaylist(String playlistId, Set<AuthorSong> listSongs) {
-        Tracks tracks;
+    private void getPlayListAndFillSetList(String playlistId, Set<AuthorSong> listSongs) {
+        Tracks responseTracks;
         setFirstPage();
         do {
-            tracks = getPlaylist(playlistId);
-            createSetListWithAuthorSong(tracks, listSongs);
-        } while (hasNextPage(tracks));
+            responseTracks = getPlaylist(playlistId);
+            fillSetListWithAuthorSong(responseTracks, listSongs);
+        } while (hasNextPage(responseTracks));
     }
 
     private static void setFirstPage() {
@@ -71,24 +75,24 @@ public class Service {
     }
 
 
-    private void createSetListWithAuthorSong(Tracks tracks, Set<AuthorSong> listSongs) {
-        for (var track : tracks.items()) {
+    private void fillSetListWithAuthorSong(Tracks responseTracks, Set<AuthorSong> listSongs) {
+        for (var track : responseTracks.items()) {
             TrackItem trackItem = track.track();
             Album album = trackItem.album();
-            createCurrentAuthorSongAndPutIntoSetList(album, listSongs);
+            fillSetList(album, listSongs);
         }
         incrementOffsetForNextPage();
     }
 
-    private static boolean hasNextPage(Tracks tracks) {
-        return tracks.next() != null;
+    private static boolean hasNextPage(Tracks responseTracks) {
+        return responseTracks.next() != null;
     }
 
     private static void incrementOffsetForNextPage() {
         OFFSET += 100;
     }
 
-    private static void createCurrentAuthorSongAndPutIntoSetList(Album album, Set<AuthorSong> listSongs) {
+    private static void fillSetList(Album album, Set<AuthorSong> listSongs) {
         String songName = album.name();
         StringBuilder authorName = new StringBuilder();
         for (var artist : album.artists()) {
