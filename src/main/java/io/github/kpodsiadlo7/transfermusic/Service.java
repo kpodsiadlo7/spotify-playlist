@@ -58,7 +58,7 @@ public class Service {
 
 
     private void createSetListWithAuthorSong(Tracks tracks) {
-        nextPage();
+        incrementOffsetForNextPage();
         for (var track : tracks.items()) {
             TrackItem trackItem = track.track();
             Album album = trackItem.album();
@@ -66,10 +66,9 @@ public class Service {
         }
     }
 
-    private static void nextPage() {
+    private static void incrementOffsetForNextPage() {
         OFFSET += 100;
     }
-
 
     private static void createCurrentAuthorSongAndPutIntoSetList(Album album, Set<AuthorSong> listSongs) {
         String songName = album.name();
