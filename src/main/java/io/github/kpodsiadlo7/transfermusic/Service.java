@@ -15,6 +15,10 @@ public class Service {
     private String CLIENT_ID;
     @Value("${client.secret}")
     private String CLIENT_SECRET;
+    private static final int LIMIT_TRACKS = 100;
+    private static int OFFSET = 0;
+    private Set<AuthorSong> listSongs = new HashSet<>();
+    private static String TOKEN;
     private final SpotifyAuth spotifyAuth;
     private final SpotifyClient spotifyClient;
 
@@ -23,10 +27,9 @@ public class Service {
         this.spotifyClient = spotifyClient;
     }
 
-    Set<AuthorSong> getPlaylist(String playlistId) {
+    Set<AuthorSong> securityProcess(String playlistId) {
         String token = getToken(CLIENT_ID, CLIENT_SECRET);
-        ArtistResponse response = spotifyClient.getPlaylist(playlistId, "Bearer " + token);
-        return processResponse(response);
+        return processResponse(playlistId);
     }
 
     private String getToken(String clientId, String clientSecret) {
@@ -36,27 +39,45 @@ public class Service {
                 "Basic " + encodedAuth,
                 "client_credentials",
                 "application/x-www-form-urlencoded");
-        return tokenResponse.get("access_token");
+        TOKEN = tokenResponse.get("access_token");
+        return TOKEN;
     }
 
-    private Set<AuthorSong> processResponse(ArtistResponse response) {
-        Tracks tracks = response.tracks();
-        return buildMapAuthorSong(tracks);
+    private Set<AuthorSong> processResponse(String playlistId) {
+        Tracks tracks;
+        do {
+            tracks = getPlaylist(playlistId);
+            createSetListWithAuthorSong(tracks);
+        } while (tracks.next() != null);
+        return listSongs.isEmpty() ? Set.of(new AuthorSong("Brak", "Brak")) : listSongs;
     }
 
-    private static Set<AuthorSong> buildMapAuthorSong(Tracks tracks) {
-        Set<AuthorSong> listSongs = new HashSet<>();
+    private Tracks getPlaylist(String playlistId) {
+        return spotifyClient.getPlaylist(playlistId, "Bearer " + TOKEN, OFFSET, LIMIT_TRACKS);
+    }
+
+
+    private void createSetListWithAuthorSong(Tracks tracks) {
+        nextPage();
         for (var track : tracks.items()) {
             TrackItem trackItem = track.track();
             Album album = trackItem.album();
-            String songName = album.name();
-            StringBuilder authorName = new StringBuilder();
-            for (var artist : album.artists()) {
-                authorName.append(artist.name());
-            }
-            listSongs.add(new AuthorSong(authorName.toString(), songName));
+            createCurrentAuthorSongAndPutIntoSetList(album, listSongs);
         }
-        return listSongs.isEmpty() ? Set.of(new AuthorSong("Brak", "Brak")) : listSongs;
+    }
+
+    private static void nextPage() {
+        OFFSET += 100;
+    }
+
+
+    private static void createCurrentAuthorSongAndPutIntoSetList(Album album, Set<AuthorSong> listSongs) {
+        String songName = album.name();
+        StringBuilder authorName = new StringBuilder();
+        for (var artist : album.artists()) {
+            authorName.append(artist.name());
+        }
+        listSongs.add(new AuthorSong(authorName.toString(), songName));
     }
 }
 

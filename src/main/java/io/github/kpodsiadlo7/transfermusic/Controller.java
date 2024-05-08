@@ -18,7 +18,7 @@ public class Controller {
 
     @GetMapping("/playlist")
     Set<AuthorSong> getPlaylist(@RequestParam String playlistId) {
-        return service.getPlaylist(playlistId);
+        return service.securityProcess(playlistId);
     }
 }
 
