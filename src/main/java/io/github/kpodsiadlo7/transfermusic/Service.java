@@ -52,17 +52,27 @@ public class Service {
     private Set<AuthorSong> processResponse(String playlistId) {
         Set<AuthorSong> listSongs = new HashSet<>();
 
-        getPlayListAndFillSetList(playlistId, listSongs);
-        return listSongs.isEmpty() ? Set.of(new AuthorSong("Brak", "Brak")) : listSongs;
+        getPlayListAndFillListSongsList(playlistId, listSongs);
+        return getAuthorSongsListOtherwiseNoContentList(listSongs);
     }
 
-    private void getPlayListAndFillSetList(String playlistId, Set<AuthorSong> listSongs) {
+    private static Set<AuthorSong> getAuthorSongsListOtherwiseNoContentList(Set<AuthorSong> listSongs) {
+        return listSongs.isEmpty() ? Set.of(noContent()) : listSongs;
+    }
+
+    private void getPlayListAndFillListSongsList(String playlistId, Set<AuthorSong> listSongs) {
         Tracks responseTracks;
         setFirstPage();
         do {
             responseTracks = getPlaylist(playlistId);
             fillSetListWithAuthorSong(responseTracks, listSongs);
+            incrementOffsetForNextPage();
         } while (hasNextPage(responseTracks));
+    }
+
+    private static AuthorSong noContent() {
+        String NO_CONTENT = "-";
+        return new AuthorSong(NO_CONTENT, NO_CONTENT);
     }
 
     private static void setFirstPage() {
@@ -81,7 +91,6 @@ public class Service {
             Album album = trackItem.album();
             fillSetList(album, listSongs);
         }
-        incrementOffsetForNextPage();
     }
 
     private static boolean hasNextPage(Tracks responseTracks) {
