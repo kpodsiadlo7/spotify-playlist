@@ -56,10 +56,6 @@ public class Service {
         return getAuthorSongsListOtherwiseNoContentList(listSongs);
     }
 
-    private static Set<AuthorSong> getAuthorSongsListOtherwiseNoContentList(Set<AuthorSong> listSongs) {
-        return listSongs.isEmpty() ? Set.of(noContent()) : listSongs;
-    }
-
     private void getPlayListAndFillListSongsList(String playlistId, Set<AuthorSong> listSongs) {
         Tracks responseTracks;
         setFirstPage();
@@ -68,11 +64,6 @@ public class Service {
             fillSetListWithAuthorSong(responseTracks, listSongs);
             incrementOffsetForNextPage();
         } while (hasNextPage(responseTracks));
-    }
-
-    private static AuthorSong noContent() {
-        String NO_CONTENT = "-";
-        return new AuthorSong(NO_CONTENT, NO_CONTENT);
     }
 
     private static void setFirstPage() {
@@ -84,21 +75,12 @@ public class Service {
         return spotifyClient.getPlaylist(playlistId, "Bearer " + TOKEN, OFFSET, LIMIT_TRACKS);
     }
 
-
     private void fillSetListWithAuthorSong(Tracks responseTracks, Set<AuthorSong> listSongs) {
         for (var track : responseTracks.items()) {
             TrackItem trackItem = track.track();
             Album album = trackItem.album();
             fillSetList(album, listSongs);
         }
-    }
-
-    private static boolean hasNextPage(Tracks responseTracks) {
-        return responseTracks.next() != null;
-    }
-
-    private static void incrementOffsetForNextPage() {
-        OFFSET += 100;
     }
 
     private static void fillSetList(Album album, Set<AuthorSong> listSongs) {
@@ -108,6 +90,23 @@ public class Service {
             authorName.append(artist.name());
         }
         listSongs.add(new AuthorSong(authorName.toString(), songName));
+    }
+
+    private static void incrementOffsetForNextPage() {
+        OFFSET += 100;
+    }
+
+    private static boolean hasNextPage(Tracks responseTracks) {
+        return responseTracks.next() != null;
+    }
+
+    private static Set<AuthorSong> getAuthorSongsListOtherwiseNoContentList(Set<AuthorSong> listSongs) {
+        return listSongs.isEmpty() ? Set.of(noContent()) : listSongs;
+    }
+
+    private static AuthorSong noContent() {
+        String NO_CONTENT = "-";
+        return new AuthorSong(NO_CONTENT, NO_CONTENT);
     }
 }
 
